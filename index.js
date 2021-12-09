@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, Intents } = require('discord.js');
 const Eris = require("eris");
+const db = require('./_database');
 
 const client = new Client({intents: [Intents.FLAGS.GUILDS]});
 let bot = new Eris(process.env.BOT_TOKEN);
@@ -51,6 +52,12 @@ bot.on("messageCreate", async message => {
     }
 });
 
+
+/*
+bot.on("messageCreate", async message => {
+    newStudent()
+});
+*/
 
 bot.connect();
 

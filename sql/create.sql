@@ -9,9 +9,9 @@ CREATE TABLE answer (
 );
 
 CREATE TABLE student_answer (
-    student_id VARCHAR (50) NOT NULL,
-    answer_id VARCHAR (50) NOT NULL,
+    student_id INTEGER NOT NULL,
+    answer_id INTEGER NOT NULL,
     PRIMARY KEY (student_id, answer_id),
     FOREIGN KEY (student_id) REFERENCES student (id),
-    FOREIGN KEY (answer_id) REFERENCES answer (id),
+    FOREIGN KEY (answer_id) REFERENCES answer (id)
 );

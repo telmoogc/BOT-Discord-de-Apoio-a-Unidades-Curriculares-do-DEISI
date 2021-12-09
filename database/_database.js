@@ -9,4 +9,5 @@ const db = new pg.Client({
     post: 5432,
 });
 
+
 module.exports.db;
