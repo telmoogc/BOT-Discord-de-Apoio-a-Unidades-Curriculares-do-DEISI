@@ -10,4 +10,4 @@ const db = new pg.Client({
 });
 
 
-module.exports.db;
+module.exports = db;

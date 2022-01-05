@@ -14,9 +14,7 @@ async function insertData(){
         const newStudent = await db.query(queryStudent, [message.author.username]);
     });
 
-    /*
-        await db.query(queryStudent, [string]);
-    */
+    await db.query(queryStudent, [string]);
 
 
     // Criar resposta do aluno
@@ -26,9 +24,7 @@ async function insertData(){
         const newAnswer = await db.query(queryAnswer, [message.content]);
     });
 
-    /*
-        await db.query(queryAnswer, [string]);
-    */
+    await db.query(queryAnswer, [string]);
 
 
     //Adicionar respostas aos alunos
@@ -38,12 +34,12 @@ async function insertData(){
         const newStudent = await db.query(queryStudentAnswer, [message.author.id, message.id]);
     });
 
-    /*
-        await db.query(queryAnswer, [string, string]);
-    */
+    await db.query(queryAnswer, [string, string]);
 
 
-    await db.end();
     
+    await db.end();
     console.log("data inserted successfully!")
 }
+
+module.exports = insertData;
