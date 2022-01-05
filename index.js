@@ -28,7 +28,9 @@ bot.on("messageCreate", async message => {
 
 
 bot.on("messageCreate", async message => {
-    insertData
+    console.log("ESTOU AQUI!!!!!");
+    insertData;
+    console.log("SUPOSTAMENTE INSERI OS DADOS");
 });
 
 
