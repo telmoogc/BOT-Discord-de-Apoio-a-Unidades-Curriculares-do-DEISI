@@ -76,6 +76,13 @@ bot.on("messageCreate", async message => {
         if(!args[0].startsWith('a')|| args[0].length<8){
             return bot.createMessage(message.channel.id, 'Usa !validar <a2190XXXX>, não te esqueças do <a> no ínicio do numero de aluno e que o teu numero de aluno apenas pode conter 8 digitos/caracteres.');
         }
+        
+        const userAccountN = await db.query('select count(*) from users where discord_id = $1', [message.author.id]);
+        if(userAccountN.rows[0].count == 0){
+            await db.query('insert into users (uuid,discord_id,student_number,student_name,valid,code) values ($1,$2,$3,$4,$5,$6)',[uuidv1(),message.author.id,'','',false,'']);
+            console.log(`[USER REGISTER SERVICE] Utilizador "${message.author.id}" - "${message.author.username}" registado com sucesso!`);
+        }
+
         const CodeUUID = uuidv1();
         var mailOptions = {
             from: 'validacao.inf.ulht@gmail.com',
