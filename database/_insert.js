@@ -1,10 +1,10 @@
-const db = require('./_database.js');
+const db = require('./_database');
 const { Client, Intents } = require('discord.js');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 async function insertData(){
-    console.log("insertData called - " + db);
+    console.log("insertData called");
     db.connect();
     console.log("Connected to BD");
 
