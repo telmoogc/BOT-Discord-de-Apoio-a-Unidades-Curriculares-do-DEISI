@@ -73,29 +73,25 @@ bot.on("messageCreate", async message => {
         console.log(`Created thread: ${thread.name}`);
     }
     if (args.length <=2 && command == '!validar' && args[0] != null && args[1] == null){
-        if(!args[0].startsWith('a')|| args[0].length<8){
-            return bot.createMessage(message.channel.id, 'Usa !validar <a2190XXXX>, não te esqueças do <a> no ínicio do numero de aluno e que o teu numero de aluno apenas pode conter 8 digitos/caracteres.');
+        if(!args[0].split('@')[0].toLowerCase().startsWith('a') || !args[0].split('@')[0].toLowerCase().startsWith('p')){
+            return bot.createMessage(message.channel.id, 'O endereço de email tem de começar por a (alunos) ou p(professor)!');
         }
-        
-        const userAccountN = await db.query('select count(*) from users where discord_id = $1', [message.author.id]);
-        if(userAccountN.rows[0].count == 0){
-            await db.query('insert into users (uuid,discord_id,student_number,student_name,valid,code) values ($1,$2,$3,$4,$5,$6)',[uuidv1(),message.author.id,'','',false,'']);
-            console.log(`[USER REGISTER SERVICE] Utilizador "${message.author.id}" - "${message.author.username}" registado com sucesso!`);
+        if(args[0].split('@')[1].toLowerCase() != 'alunos.ulht.pt' || args[0].split('@')[1].toLowerCase() != 'ulusofona.pt' ){
+            return bot.createMessage(message.channel.id, 'O endereço de email tem de conter um dos seguintes dominios alunos.ulht.pt ou ulusofona.pt.');
         }
-
         const CodeUUID = uuidv1();
         var mailOptions = {
             from: 'validacao.inf.ulht@gmail.com',
-            to: args[0]+'@alunos.ulht.pt',
-            subject: 'Validação conta Discord + DEISI',
-            text: 'O teu codigo de validação é o '+CodeUUID+'.'
+            to: args[0],
+            subject: 'Validação conta Discord',
+            text: 'O teu codigo de validação é o '+ CodeUUID +'.'
         };
 
         await db.query('update users set code = $1,student_number = $2 where discord_id = $3',[CodeUUID,args[0],message.author.id]);
 
         transporter.sendMail(mailOptions, function(error, info){
             if (error) {
-                console.log('[EMAIL SERVICE] Error: '+error);
+                console.log('[EMAIL SERVICE] Error: '+ error);
             } else {
                 console.log('[EMAIL SERVICE] Email enviado: ' + info.response);
             }
