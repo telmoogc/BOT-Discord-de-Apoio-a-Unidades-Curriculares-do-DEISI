@@ -1,5 +1,4 @@
 npm init
 npm i discord.js
 npm i dotenv
-npm install --no-optional eris
 npm i pg
