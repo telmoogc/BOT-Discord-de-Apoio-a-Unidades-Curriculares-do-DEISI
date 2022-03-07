@@ -71,7 +71,7 @@ client.on("messageCreate", async message => {
     if (!message.content.startsWith(prefix)) return;
 
     if (message.content.startsWith(prefix)) {
-        //  return bot.createMessage(message.channel.id, message.content.substr(1,message.content.length));
+        //return bot.createMessage(message.channel.id, message.content.substr(1,message.content.length));
     }
 
     //processo de validação de user DC e numero de aluno
