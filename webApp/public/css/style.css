@@ -1,0 +1,33 @@
+a:link { text-decoration: none; color: black;}
+
+
+a:visited { text-decoration: none; }
+
+
+a:hover { text-decoration: none; }
+
+
+a:active { text-decoration: none; }
+
+
+.card, .list-group-item {
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+.table {
+    color: #FFFFFF;
+}
+
+.tr-row:hover {
+    background-color: #e6ebf0;
+    color:#FFFFFF;
+}
+
+.imagens-hs {
+    margin-left: 20%;
+}
+
+.imagem-index {
+    margin-left: 0%;
+}
