@@ -71,11 +71,11 @@ client.on("messageCreate", async message => {
         let name = message.content.substring(message.content.split(' ')[0].length+1+message.content.split(' ')[1].length+1);
         if (server.length >0 && name.length >0 && command == '!config') {
             if (!bot_servers.includes(server)){
-                return message.reply('O servidor ID "'+server+ '" não se encontra disponível para configuração.');
+                return message.reply('O servidor ID "' + server + '" não se encontra disponível para configuração.');
             }
-            const bd = await db.query('select uc_name from unidades_curriculares where server_id = $1',[server]);
+            const bd = await db.query('select uc_name from unidades_curriculares where server_id = $1', [server]);
             if(db != null && bd.rows.length>0){
-                return message.reply('O servidor ID "'+server+ '" Já se encontra registado com o nome "'+bd.rows[0].uc_name+'".');
+                return message.reply('O servidor ID "' + server + '" Já se encontra registado com o nome "' + bd.rows[0].uc_name + '".');
             }
             await db.query('insert into unidades_curriculares (uuid,server_id,uc_name) values ($1,$2,$3)', [uuid,server,name]);
             return message.reply('Servidor ID '+server+ ' configurado com o nome '+name+'!\nIdentificador único: '+uuid);
@@ -174,7 +174,14 @@ client.on("messageCreate", async message => {
             return message.channel.send('A sua conta já está validada!');
         }
 
-        const display_name = message.member.nickname.valueOf().split(' ');
+        var display_name = "";
+
+        if(message.member.nickname == null) {
+            display_name = message.member.user.username.valueOf().split(' ');
+        } else {
+            display_name = message.member.nickname.valueOf().split(' ');
+        }
+
         if (!args[0].split('@')[0].toLowerCase().startsWith('a') && !args[0].split('@')[0].toLowerCase().startsWith('p')) {
             return message.channel.send('O endereço de email tem de começar por a (alunos) ou p(professor)!');
         }
@@ -193,12 +200,15 @@ client.on("messageCreate", async message => {
             await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.nickname.valueOf(), message.member.id]);
             if (display_name[0].startsWith('p')) {
                 message.member.roles.add(message.member.guild.roles.cache.find(role => role.name === "Docente"));
-                console.log('[USER SERVICE] Grupo setado para o user '+message.member.id+' como Docente.');
+                console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Docente.');
             } else if (display_name[0].startsWith('a')) {
                 message.member.roles.add(message.member.guild.roles.cache.find(role => role.name === "Aluno"));
-                console.log('[USER SERVICE] Grupo setado para o user '+message.member.id+' como Aluno.');
+                console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Aluno.');
             }
-            console.log('[USER SERVICE] Conta validada para o user '+message.member.id+'!');
+            console.log('[USER SERVICE] Conta validada para o user ' + message.member.id + '!');
+
+            message.member.roles.remove(message.member.guild.roles.cache.find(role => role.name === "Não-Verificado"));
+
             return message.channel.send('Conta validada com sucesso!');
         } else {
             return message.channel.send('Ocorreu um erro ao validar a conta');
