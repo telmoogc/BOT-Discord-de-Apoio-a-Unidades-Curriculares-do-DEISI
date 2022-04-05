@@ -54,7 +54,7 @@ client.on('ready', async () => {
     'WebServer Status: Online\n'+
     'Estou online nos seguintes servidores:');
     client.guilds.cache.forEach(guild => {
-        console.log(''+guild.id+' | '+guild.name+'');
+        console.log('' + guild.id + ' | ' + guild.name+'');
         bot_servers.push(guild.id);
       });
       console.log('\n');
@@ -78,7 +78,7 @@ client.on("messageCreate", async message => {
                 return message.reply('O servidor ID "' + server + '" Já se encontra registado com o nome "' + bd.rows[0].uc_name + '".');
             }
             await db.query('insert into unidades_curriculares (uuid,server_id,uc_name) values ($1,$2,$3)', [uuid,server,name]);
-            return message.reply('Servidor ID '+server+ ' configurado com o nome '+name+'!\nIdentificador único: '+uuid);
+            return message.reply('Servidor ID ' + server + ' configurado com o nome ' + name + '!\nIdentificador único: ' + uuid);
         }else{
             return message.reply('Comando inválido, utilize !config <id server discord> <nome do servidor>.');
         }
@@ -94,7 +94,7 @@ client.on("guildMemberAdd", async (member) => {
     } else {
         const userAccount = await db.query('select student_number,valid from users where discord_id = $1', [member.user.id]);
         if (userAccount.rows[0].student_number.toString().startsWith('p') && userAccount.rows[0].valid === true) {
-            console.log('[USER SERVICE] Grupo setado para o user '+member.user.id+' Docente.');
+            console.log('[USER SERVICE] Grupo setado para o user ' + member.user.id + ' Docente.');
             member.roles.add(member.guild.roles.cache.find(role => role.name === "Docente"));
          
             await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', [uuidv1(), member.user.id,member.guild.id ]);
@@ -104,7 +104,7 @@ client.on("guildMemberAdd", async (member) => {
             console.log('[USER SERVICE] Grupo setado para o user '+member.user.id+' Aluno.');
             member.roles.add(member.guild.roles.cache.find(role => role.name === "Aluno"));
         } else {
-            console.log('[USER SERVICE] Grupo setado para o user '+member.user.id+' não validado.');
+            console.log('[USER SERVICE] Grupo setado para o user ' + member.user.id + ' não validado.');
             member.roles.add(member.guild.roles.cache.find(role => role.name === "Não-Verificado"));
         }
     }
@@ -166,7 +166,7 @@ client.on("messageCreate", async message => {
         }
 
         return message.channel.send('Foi enviado um código para o teu email!\nAssim que receberes ' +
-            'executa o comando !validar <aXXXXXX> <codigo do email>');
+            'executa o comando !validar a<XXXXXX>@alunos.ulht.pt <codigo do email>');
 
     } else if (args.length == 2 && command == '!validar' && args[0] != null && args[1] != null) {
         const valid = await db.query('select valid from users where discord_id = $1', [message.member.id]);
@@ -192,12 +192,17 @@ client.on("messageCreate", async message => {
         if (display_name.length != 3) {
             return message.channel.send('O teu apelido neste servidor não cumpre os requisitos, use aXXXXXX Nome Apelido! Ex: a21925372 Rui Silva');
         } else if (!display_name[0].toString().startsWith('a') && !display_name[0].toString().startsWith('p')) {
-            return message.channel.send('O teu indicador tem de começar por "a" ou por "p"! Ex: a21925372 Rui Silva');
+            return message.channel.send('O teu indicador tem de começar por "a" ou por "p"! Ex: a21925372 Rui Silva\nVolta a executar o comando !validar a<XXXXXX>@alunos.ulht.pt <codigo do email>');
         }
 
         const userAccountN = await db.query('select count(*) from users where discord_id = $1 and code like $2 and student_number like $3', [message.member.id, args[1], display_name[0]]);
         if (userAccountN.rows[0].count == 1) {
-            await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.nickname.valueOf(), message.member.id]);
+            if(message.member.nickname == null) {
+                await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.user.username.valueOf(), message.member.id]);
+            } else {
+                await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.nickname.valueOf(), message.member.id]);
+            }
+            
             if (display_name[0].startsWith('p')) {
                 message.member.roles.add(message.member.guild.roles.cache.find(role => role.name === "Docente"));
                 console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Docente.');
@@ -214,10 +219,15 @@ client.on("messageCreate", async message => {
             return message.channel.send('Ocorreu um erro ao validar a conta');
         }
     } else {
+        
+        if(!args.split(' ').length > 3) {
+            return message.channel.send('O comando que acabou de executar tem informação a mais, você só necessita de fazer \"!validar <e-mail institucional> <código de validação>\"')
+        }
+
         //console.log("AGRS " + args.length + " | " + args);
         return message.channel.send('Para utilizares este comando usa um destes exemplos:\n' +
-            '!validar <aXXXXXX> - Para enviar/reenviar o código para o teu email.\n' +
-            '!validar <aXXXXXX> <codigo> - Para validar a tua conta.');
+            '!validar a<XXXXXX>@aluhos.ulht.pt - Para enviar/reenviar o código para o teu email.\n' +
+            '!validar a<XXXXXX>@alunos.ulht.pt <codigo> - Para validar a tua conta.');
     }
 });
 
@@ -227,7 +237,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
         return reaction.remove();
     }else{
         if(reaction.emoji.name.valueOf().includes("🏅")){
-            console.log('[RANKING] Um utilizador ('+user.id+') votou na mensagem '+reaction.message.id+ ' com 🏅!');
+            console.log('[RANKING] Um utilizador (' + user.id + ') votou na mensagem '+reaction.message.id+ ' com 🏅!');
             await db.query('update threads_interactions set good_message = $1 where discord_message_id = $2', [true, reaction.message.id]);
         }
     }
@@ -236,7 +246,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 client.on('messageReactionRemove', async (reaction, user) => {
     const bd = await db.query('select student_number from users where discord_id = $1', [user.id]);
     if(reaction.emoji.name.valueOf().includes("🏅")){
-        console.log('[RANKING] Um utilizador ('+user.id+') removeu 🏅 na mensagem '+reaction.message.id+ '!');
+        console.log('[RANKING] Um utilizador (' + user.id + ') removeu 🏅 na mensagem ' + reaction.message.id + '!');
         await db.query('update threads_interactions set good_message = $1 where discord_message_id = $2', [false, reaction.message.id]);
     }
 });
@@ -252,11 +262,10 @@ client.on("messageCreate", async message => {
 
 client.on('threadCreate', async (thread) => {
     const uuid = uuidv1();
-    console.log('[THREADS] Nova questão iniciada Discord ID: '+thread.guild.id+' DB unique ID: '+uuid+' Titulo: '+ thread.name.valueOf());
+    console.log('[THREADS] Nova questão iniciada Discord ID: ' + thread.guild.id + ' DB unique ID: ' + uuid + ' Titulo: ' + thread.name.valueOf());
     await db.query('insert into students_threads (uuid,discord_user_id,title,thread_id,discord_server_id,created_at) values ($1,$2,$3,$4,$5,$6)',
     [uuid, thread.ownerId, thread.name.valueOf(),thread.id.valueOf(),thread.guild.id,null]);
 
 });
 
 client.login(process.env.BOT_TOKEN);
-
