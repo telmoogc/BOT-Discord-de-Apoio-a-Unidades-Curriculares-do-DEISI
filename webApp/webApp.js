@@ -10,28 +10,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.set('view engine', 'ejs');
 
-
-const knex = require('knex')({
-    client: 'pg',
-    connection: {
-      host : process.env.DATABASE_HOST,
-      port : process.env.PORT,
-      user : process.env.DATABASE_USER,
-      password : process.env.DATABASE_PASSWORD,
-      database : process.env.DATABASE
-    }
-  });
-
 app.get("/", function(req, res){
 
     res.render("index");
     //res.sendFile(__dirname + "/index.html");
 });
 
-app.get("/main-menu", function(req, res){
-
-    const results = db.query('select * from unidades_curriculares');
-    res.render("main-menu", { ucs: results.rows });
+app.get("/main-menu", async function(req, res){
+    db.query('select * from unidades_curriculares', (error, results) => {
+        if (error) {
+          throw error
+        }
+        //res.status(200).json(results.rows);
+        res.status(200).render("main-menu", { ucs: results.rows });
+      });
 
 
     /*knex.select('*').from('unidades_curriculares').then((results) => {
@@ -48,5 +40,6 @@ app.get("/uc-details", function(req, res){
 });
 
 app.listen(process.env.PORT || 80, function(){
+    db.connect();
     console.log("Server started on port 3000");
 });

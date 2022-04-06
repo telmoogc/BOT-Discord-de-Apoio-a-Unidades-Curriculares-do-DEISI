@@ -37,13 +37,12 @@
           <ul class="list-group list-group-flush">
 
             <% if (ucs.length > 0) { %>
-              <% for (let j = 0; j < ucs.length; j++) { %>
-                <li class="list-group-item"><a href="/uc-details" style="color: #ffffff"><i class="fa-solid fa-block-quote p-2"></i> <%= ucs.rows[j].uc_name %> </a></li>
+              <% for (let uc of ucs) { %>
+                <li class="list-group-item"><a href="/uc-details" style="color: #ffffff"><i class="fa-solid fa-block-quote p-2"></i> <%= uc.uc_name %> </a></li>
               <% } %>               
             <% } else { %>
               <li class="list-group-item"><a href="/uc-details" style="color: #ffffff">Ainda não possui unidades curriculares</a></li>
             <% } %> 
-            
             
             <!-- 
             <li class="list-group-item"><a href="/uc-details" style="color: #ffffff"><i class="fa-solid fa-block-quote p-2"></i> Redes de Computadores</a></li>

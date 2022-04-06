@@ -47,23 +47,55 @@ async function validarAllUsers(){
       });
 }
 
+async function validarServer(server){
+    const dbserver = await db.query('select count(*) from unidades_curriculares where server_id = $1', [server.id]);
+    return dbserver.rows[0].count;
+}
+
 client.on('ready', async () => {
-    db.connect();
+   await db.connect();
     console.log('\n\nBOT APOIO A U.Cs\nVersão: '+pjson.version+'\n'+
     'BOT Stauts: Online\n'+
     'WebServer Status: Online\n'+
     'Estou online nos seguintes servidores:');
-    client.guilds.cache.forEach(guild => {
-        console.log('' + guild.id + ' | ' + guild.name+'');
+    for (let guild of client.guilds.cache.values()) {
         bot_servers.push(guild.id);
-      });
+        const dbserver = await db.query('select count(*) from unidades_curriculares where server_id = $1', [guild.id]);
+        if (dbserver.rows[0].count == 0) {
+            let uuid = uuidv1();
+            await db.query('insert into unidades_curriculares (uuid,server_id,uc_name) values ($1,$2,$3)', [uuid,guild.id,guild.name]);
+            console.log('[NOVO | ADICIONADO] ' + guild.id + ' | ' + guild.name+'');
+        }else{
+            console.log('[REGISTADO] ' + guild.id + ' | ' + guild.name+'');
+        }
+      };
       console.log('\n');
     console.log('Processo de validação de utilizadores...');
     validarAllUsers();
 });
 
+//bot entra num servidor: verificar users e registar + setar grupo ||| bot registar server na tabela das ucs
+client.on("guildCreate", async (guild) => {
+    bot_servers.push(guild.id);
+    const dbserver = await db.query('select count(*) from unidades_curriculares where server_id = $1', [guild.id]);
+    if (dbserver.rows[0].count == 0) {
+        let uuid = uuidv1();
+        await db.query('insert into unidades_curriculares (uuid,server_id,uc_name) values ($1,$2,$3)', [uuid,guild.id,guild.name]);
+        console.log('[NOVO | ADICIONADO] ' + guild.id + ' | ' + guild.name+'');
+    }
+})
+
+//bot remove servidor das ucs e toda a informação guardada ????
+client.on("guildDelete", guild => {
+    console.log("Bot saiu de um servidor: " + guild.id);
+})
+
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
+    /*
+
+    DESCONTINUADO - AGORA VALIDA NO ARRAQUE OU NA ENTRADA NUM NOVO SERVIDOR
+
     if(message.channel.type=='DM'){
         let uuid = uuidv1();
         let command = message.content.split(' ')[0];
@@ -82,8 +114,10 @@ client.on("messageCreate", async message => {
         }else{
             return message.reply('Comando inválido, utilize !config <id server discord> <nome do servidor>.');
         }
-    }
+    }*/
 });
+
+
 //primeira validação de user e criação de row na tabela users em BD
 client.on("guildMemberAdd", async (member) => {
     const userAccountN = await db.query('select count(*) from users where discord_id = $1', [member.user.id]);
@@ -197,15 +231,11 @@ client.on("messageCreate", async message => {
 
         const userAccountN = await db.query('select count(*) from users where discord_id = $1 and code like $2 and student_number like $3', [message.member.id, args[1], display_name[0]]);
         if (userAccountN.rows[0].count == 1) {
-            if(message.member.nickname == null) {
-                await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.user.username.valueOf(), message.member.id]);
-            } else {
-                await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.nickname.valueOf(), message.member.id]);
-            }
-            
+            await db.query('update users set valid = $1,student_name = $2 where discord_id = $3', [true, message.member.nickname.valueOf(), message.member.id]);
             if (display_name[0].startsWith('p')) {
                 message.member.roles.add(message.member.guild.roles.cache.find(role => role.name === "Docente"));
                 console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Docente.');
+                //falta inserir o docente na tabela de acesso ao website 
             } else if (display_name[0].startsWith('a')) {
                 message.member.roles.add(message.member.guild.roles.cache.find(role => role.name === "Aluno"));
                 console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Aluno.');
@@ -265,6 +295,17 @@ client.on('threadCreate', async (thread) => {
     console.log('[THREADS] Nova questão iniciada Discord ID: ' + thread.guild.id + ' DB unique ID: ' + uuid + ' Titulo: ' + thread.name.valueOf());
     await db.query('insert into students_threads (uuid,discord_user_id,title,thread_id,discord_server_id,created_at) values ($1,$2,$3,$4,$5,$6)',
     [uuid, thread.ownerId, thread.name.valueOf(),thread.id.valueOf(),thread.guild.id,null]);
+
+});
+
+client.on("messageDelete", function(message){
+    console.log(`message is deleted -> ${message}`);
+    //deveria marcar flag eleted = 1
+});
+
+client.on('threadDelete', async (thread) => {
+    console.log(`thread is deleted -> ${thread}`);
+    //deveria marcar flag deleted = 1 e interar em todas as mensagens desta tread para igualmente marcar deleted = 1
 
 });
 
