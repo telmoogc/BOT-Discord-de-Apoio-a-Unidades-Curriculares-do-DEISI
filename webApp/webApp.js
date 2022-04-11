@@ -1,3 +1,7 @@
+//***********************************************************************************************\\
+//   https://discord.com/oauth2/authorize?client_id=904855826647379969&scope=bot&permissions=8    \\
+//*************************************************************************************************\\
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require('path');
@@ -14,7 +18,7 @@ app.set('view engine', 'ejs');
 app.get("/", function(req, res){
 
     res.render("index");
-    res.sendFile(__dirname + "/index.html");
+    //res.sendFile(__dirname + "/index.html");
 });
 
 app.get("/main-menu", async function(req, res){
