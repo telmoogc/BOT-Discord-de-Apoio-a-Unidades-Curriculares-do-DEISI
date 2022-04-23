@@ -1,6 +1,6 @@
 <h1 align="center">
     <br>
-    <img src="discord_logo.png" width="500">
+    <img src="discord_logo.png" width="300">
     <br>
     BOT Discord de Apoio a Unidades Curriculares do DEISI
     <br>
