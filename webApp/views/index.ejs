@@ -33,15 +33,15 @@
 			</div>
 			<div class="col-sm-6" style="margin-top:10%">
 				<h1 class="text-center text-white">Login</h1>
-				<form class="text-white" action="/main-menu">
+				<form class="text-white" action="/login" method="get">
 					<div class="mb-3">
-						<label for="exampleInputEmail1" class="form-label">Endereço de email</label>
-						<input type="email" class="form-control" id="exampleInputEmail1" name="telmoCosta" aria-describedby="emailHelp">
+						<label for="exampleInputEmail1" class="form-label">Número de Docente</label>
+						<input type="text" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="p0000" required>
 						<div id="emailHelp" class="text-danger">Isto vai dar jeito para validares os campos dos formulários</div>
 					</div>
 					<div class="mb-3">
 						<label for="exampleInputPassword1" class="form-label">Password</label>
-						<input type="password" class="form-control" id="exampleInputPassword1">
+						<input type="password" class="form-control" id="password" name="password" required>
 					</div>
 					<div class="col text-center pt-4">
 						<button type="submit" class="btn btn-outline-light btn-lg">Entrar</button>
