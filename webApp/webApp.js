@@ -39,7 +39,7 @@ app.get("/", function(req, res){
            if (error) {
              throw error
            }
-           res.status(200).render("main-menu", { ucs: results.rows,usr: results.rows[0].user_name });
+           res.status(200).render("main-menu", { ucs: results.rows,usr: "bananas" });
          });
     }else{
         res.status(200).render("index");
