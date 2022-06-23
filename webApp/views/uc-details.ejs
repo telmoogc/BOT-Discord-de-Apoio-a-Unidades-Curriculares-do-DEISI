@@ -1,11 +1,18 @@
 <!doctype html>
 <html lang="pt-Pt">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-  <script src="images/icons.js"></script>
-	<link rel="stylesheet" href="css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.slim.js"
+    integrity="sha256-HwWONEZrpuoh951cQD1ov2HUK5zA5DwJ1DNUXaM6FsY=" crossorigin="anonymous"></script>
+  <script src="../images/icons.js"></script>
+  <link rel="stylesheet" href="css/style.css?v=1.1">
   <title>Gestor de U.C's</title>
 </head>
 
@@ -24,133 +31,356 @@
 
 
 <body style="background-color: #0b406c;">
-  <div class="container" >
+  <div class="container">
     <div class="row">
       <div class="col-sm-12 mt-5">
-        <h3 class="text-white"><%= users[0].uc_name %></h3>
+        <h3 class="text-white">
+          <%= ucdocentes[0].uc_name %>
+        </h3>
       </div>
       <div class="col-sm-6" style="margin-top:8%">
 
         <div class="col-sm-12">
-        <div class="row">
-          <div class="col-sm-4">
-            <div class="card text-center">
-              <p class="pt-2">🏆</p>
-                <h5 class="card-title">Premios Atribuidos</h5>
-                <p class="card-text">0</p>
+          <div class="row">
+
+            <div class="col-sm-6 mt-3">
+              <div class="card text-center">
+                <p class="pt-2">🕗</p>
+                <h5 class="card-title">Questões Criadas</h5>
+                <p class="card-text">
+                  <%= estatisticas.threads %>
+                </p>
+              </div>
             </div>
-          </div>
 
-
-          <div class="col-sm-4">
-            <div class="card text-center">
-              <p class="pt-2">📑</p>
-                <h5 class="card-title">Questões<br>Interações</h5>
-                <p class="card-text">0</p>
+            <div class="col-sm-6 mt-3">
+              <div class="card text-center">
+                <p class="pt-2">🕗</p>
+                <h5 class="card-title">Interações & Respostas</h5>
+                <p class="card-text">
+                  <%= estatisticas.interacoes %>
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div class="col-sm-4">
+            <!---<div class="col-sm-4 mt-3">
             <div class="card text-center">
               <p class="pt-2">🕗</p>
-                <h5 class="card-title">Tempo médio para resolução</h5>
+                <h5 class="card-title">Tempo médio até 1ª resposta</h5>
                 <p class="card-text">0</p>
             </div>
           </div>
-          
+
+          <div class="col-sm-4 mt-3">
+            <div class="card text-center">
+              <p class="pt-2">🕗</p>
+                <h5 class="card-title">Tempo médio até ultima resposta</h5>
+                <p class="card-text">0</p>
+            </div>
+          </div>
+
+          <div class="col-sm-4 mt-3">
+            <div class="card text-center">
+              <p class="pt-2">🕗</p>
+                <h5 class="card-title">Tempo médio até solução de alunos</h5>
+                <p class="card-text">0</p>
+            </div>
+          </div>--->
+
+          </div>
         </div>
+
+        <ul class="nav nav-tabs pt-5" id="myTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="tempoprimeira-tab" data-bs-toggle="tab" data-bs-target="#tempoprimeira"
+              type="button" role="tab" aria-controls="tempoprimeira" aria-selected="true">Tempos até primeira
+              interação/resposta</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="tempoultima-tab" data-bs-toggle="tab" data-bs-target="#tempoultima" type="button"
+              role="tab" aria-controls="tempoultima" aria-selected="false">Tempos até ultíma interação/resposta</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="docentes-tab" data-bs-toggle="tab" data-bs-target="#docentes" type="button"
+              role="tab" aria-controls="docentes" aria-selected="false">Docentes no Discord</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="topquestoes-tab" data-bs-toggle="tab" data-bs-target="#topquestoes" type="button"
+              role="tab" aria-controls="topquestoes" aria-selected="false">Top perguntas criadas</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="toprespostas-tab" data-bs-toggle="tab" data-bs-target="#toprespostas" type="button"
+              role="tab" aria-controls="toprespostas" aria-selected="false">Top interações criadas</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="topalunosperguntas-tab" data-bs-toggle="tab" data-bs-target="#topalunosperguntas"
+              type="button" role="tab" aria-controls="topalunosperguntas" aria-selected="false">Top alunos com mais
+              perguntas 🏆 </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="topalunosrespostas-tab" data-bs-toggle="tab" data-bs-target="#topalunosrespostas"
+              type="button" role="tab" aria-controls="topalunosrespostas" aria-selected="false">Top alunos com mais
+              respostas 🏅</a>
+          </li>
+        </ul>
+        <div class="tab-content" id="myTabContent">
+
+
+
+          <div class="tab-pane fade show active" id="tempoprimeira" role="tabpanel" aria-labelledby="tempoprimeira-tab">
+
+            <h5 class="text-white mt-5">Tempo até à primeira interação/resposta</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">Thread #</th>
+                  <th scope="col">Data de criação</th>
+                  <th scope="col">Data 1ª interação</th>
+                  <th scope="col">Tempo decorrido</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let tempo of tempoprimeira) { %>
+                  <tr class="tr-row">
+                    <td class="text-center"><a data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="Clique para visualizar no Discord" target="_blank"
+                        href="https://discord.com/channels/<%= ucdocentes[0].server_id %>/<%= tempo.thread_id %>"><i
+                          class="fad fa-external-link-square"></i></a></td>
+                    <td>
+                      <%= tempo.created_at %>
+                    </td>
+                    <td>
+                      <%= tempo.last_at %>
+                    </td>
+                    <td>
+                      <%= utils.toDaysMinutesSeconds(tempo.elapsetime) %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+          </div>
+
+          <div class="tab-pane fade show" id="tempoultima" role="tabpanel" aria-labelledby="tempoultima-tab">
+
+            <h5 class="text-white mt-5">Tempo até à ultima interação/resposta</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">Thread #</th>
+                  <th scope="col">Data de criação</th>
+                  <th scope="col">Data ultima interação</th>
+                  <th scope="col">Tempo decorrido</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let tempo of tempoultima) { %>
+                  <tr class="tr-row">
+                    <td class="text-center"><a data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="Clique para visualizar no Discord" target="_blank"
+                        href="https://discord.com/channels/<%= ucdocentes[0].server_id %>/<%= tempo.thread_id %>"><i
+                          class="fad fa-external-link-square"></i></a></td>
+                    <td>
+                      <%= tempo.created_at %>
+                    </td>
+                    <td>
+                      <%= tempo.last_at %>
+                    </td>
+                    <td>
+                      <%= utils.toDaysMinutesSeconds(tempo.elapsetime) %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+          </div>
+
+
+
+          <div class="tab-pane fade show" id="docentes" role="tabpanel" aria-labelledby="docentes-tab">
+
+            <h5 class="text-white mt-5">Docentes que operam nesta unidade curricular</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Discord ID</th>
+                  <th scope="col">Username</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let user of ucdocentes) { %>
+                  <tr class="tr-row">
+                    <td>
+                      <%= user.uuid %>
+                    </td>
+                    <td>
+                      <%= user.discord_id %>
+                    </td>
+                    <td>
+                      <%= user.user_name %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+          </div>
+
+
+
+          <div class="tab-pane fade" id="topquestoes" role="tabpanel" aria-labelledby="topquestoes-tab">
+
+            <h5 class="text-white mt-5">Top alunos com mais questões criadas</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">Discord ID</th>
+                  <th scope="col">Nome de aluno</th>
+                  <th scope="col">Nº de questões criadas</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let user of topalunos) { %>
+                  <tr class="tr-row">
+                    <td>
+                      <%= user.discord_user_id %>
+                    </td>
+                    <td>
+                      <%= user.user_name %>
+                    </td>
+                    <td>
+                      <%= user.quantidade %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+          </div>
+          <div class="tab-pane fade" id="toprespostas" role="tabpanel" aria-labelledby="toprespostas-tab">
+
+            <h5 class="text-white mt-5">Top alunos com mais respostas/interações</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Discord ID</th>
+                  <th scope="col">Nº de interações</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let user of topinteracoes) { %>
+                  <tr class="tr-row">
+                    <td>
+                      <%= user.discord_user_id %>
+                    </td>
+                    <td>
+                      <%= user.user_name %>
+                    </td>
+                    <td>
+                      <%= user.quantidade %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+          </div>
+          <div class="tab-pane fade" id="topalunosperguntas" role="tabpanel" aria-labelledby="topalunosperguntas-tab">
+
+            <h5 class="text-white mt-5">🏆 Top alunos com mais perguntas relevantes 🏆</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Discord ID</th>
+                  <th scope="col">Nº de perguntas</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let user of topboasthreads) { %>
+                  <tr class="tr-row">
+                    <td>
+                      <%= user.discord_user_id %>
+                    </td>
+                    <td>
+                      <%= user.user_name %>
+                    </td>
+                    <td>
+                      <%= user.quantidade %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+
+          </div>
+          <div class="tab-pane fade" id="topalunosrespostas" role="tabpanel" aria-labelledby="topalunosrespostas-tab">
+
+            <h5 class="text-white mt-5">🏅 Top alunos com mais respostas corretas 🏅</h5>
+            <table class="table text-white">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Discord ID</th>
+                  <th scope="col">Nº de interações</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <% for (let user of topboasrespostas) { %>
+                  <tr class="tr-row">
+                    <td>
+                      <%= user.discord_user_id %>
+                    </td>
+                    <td>
+                      <%= user.user_name %>
+                    </td>
+                    <td>
+                      <%= user.quantidade %>
+                    </td>
+                  </tr>
+                  <% } %>
+
+              </tbody>
+            </table>
+
+          </div>
         </div>
 
-        <h5 class="text-white mt-5">Docentes que operam nesta unidade curricular</h5>
-        <table class="table text-white">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Discord ID</th>
-              <th scope="col">Username</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            <% for (let user of users) { %>
-              <tr class="tr-row">
-                <td><%= user.uuid %></td>
-                <td><%= user.discord_id %></td>
-                <td><%= user.user_name %></td>
-              </tr>
-            <% } %>     
-           
-          </tbody>
-        </table>
 
 
-        <h5 class="text-white mt-5">Top alunos com mais questões criadas</h5>
-        <table class="table text-white">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Discord ID</th>
-              <th scope="col">Username</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            <% for (let user of users) { %>
-              <tr class="tr-row">
-                <td><%= user.uuid %></td>
-                <td><%= user.discord_id %></td>
-                <td><%= user.user_name %></td>
-              </tr>
-            <% } %>     
-           
-          </tbody>
-        </table>
-
-        <h5 class="text-white mt-5">Top alunos com mais respostas/interações</h5>
-        <table class="table text-white">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Discord ID</th>
-              <th scope="col">Username</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            <% for (let user of users) { %>
-              <tr class="tr-row">
-                <td><%= user.uuid %></td>
-                <td><%= user.discord_id %></td>
-                <td><%= user.user_name %></td>
-              </tr>
-            <% } %>     
-           
-          </tbody>
-        </table>
-
-        <h5 class="text-white mt-5">Top alunos com mais respostas corretas</h5>
-        <table class="table text-white">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Discord ID</th>
-              <th scope="col">Username</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            <% for (let user of users) { %>
-              <tr class="tr-row">
-                <td><%= user.uuid %></td>
-                <td><%= user.discord_id %></td>
-                <td><%= user.user_name %></td>
-              </tr>
-            <% } %>     
-           
-          </tbody>
-        </table>
 
 
+
+
+
+
+
+
+
+
+        <script>
+          $(function () {
+            $('#myTab li:last-child a').tab('show')
+          })
+        </script>
       </div>
       <div class="col-sm-6 mt-5 d-sm-none d-md-block d-none d-sm-block">
         <img class="imagens-hs" src="../images/uc-details.png" style="width: 99%">
@@ -158,9 +388,21 @@
     </div>
     <nav class="navbar fixed-bottom navbar-light ">
       <div class="container-fluid">
-        <p class="navbar-brand text-white ms-auto">p9999 | Zé da Silva <a class="text-white" href="/index.html"><i class="ms-3 fa-duotone fa-power-off fa-lg"></i></a></p>
+        <p class="navbar-brand text-white ms-auto">
+          <%= userinfo %> <a class="text-white" href="/sair"><i class="ms-3 fa-duotone fa-power-off fa-lg"></i></a>
+        </p>
       </div>
     </nav>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-  </body>
-  </html>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"></script>
+
+    <script>
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    </script>
+</body>
+
+</html>

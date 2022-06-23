@@ -1,8 +1,9 @@
 require('dotenv').config();
 var pjson = require('./package.json');
-const {Client, Intents, TextChannel,ChannelTypes, GuildMemberManager} = require('discord.js');
+const {Client, Intents, TextChannel,ChannelTypes, GuildMemberManager,MessageEmbed,Message} = require('discord.js');
 const db = require('./database/_database');
 var nodemailer = require('nodemailer');
+const date = require('date-and-time');
 const {v1: uuidv1} = require('uuid');
 
 var bot_servers = [];
@@ -28,11 +29,11 @@ const transporter = nodemailer.createTransport({
 });
 
 let prefix = "!";
-let bot_id = "904855826647379969"; // Ver se da para meter isto na ENV
-const timeToDelete = 60000; //60s para apagar mensagens do bot + user
+let bot_id = "904855826647379969";
+const timeToDelete = 60000;//60s para apagar mensagens do bot+ user
 
-async function sendMessage(message, text){
-    message.channel.send(text).catch('[ERRO] Detectado no reply de mensagens! ' + console.error).then(msg => {
+async function sendMessage(message,text){
+    message.channel.send(text).catch('[ERRO] Detectado no reply de mensagens! '+console.error).then(msg => {
         timer = setTimeout(() => {
             message.channel.messages
             .fetch(message.id)
@@ -40,7 +41,7 @@ async function sendMessage(message, text){
 
               fetchedMessage
                 .delete()
-                .catch((err) => console.log('[ERRO] Não foi possível apagar esta mensagem: ' + err, err));
+                .catch((err) => console.log('[ERRO] Não foi possível apagar esta mensagem: '+err, err));
             })
             .catch((err) => {
               if (err.httpStatus === 404) {
@@ -50,6 +51,7 @@ async function sendMessage(message, text){
               }
             });
             msg.delete()}, timeToDelete);
+
       });
 }
 
@@ -60,12 +62,26 @@ async function validarAllUsers(){
             if(member.user.id == bot_id){
                 return;
             }
-
             const userAccountN = await db.query('select count(*) from users where discord_id = $1', [member.user.id]);
             if (userAccountN.rows[0].count == 0) {
                 db.query('insert into users (uuid,discord_id,user_number,user_name,valid,code) values ($1,$2,$3,$4,$5,$6)', [uuidv1(), member.user.id, '', '', false, '']);
-                console.log(`[USER SERVICE] Utilizador " ${member.user.id} " - " ${member.user.username} " registado com sucesso!`);
+                console.log(`[USER SERVICE] Utilizador "${member.user.id}" - "${member.user.username}" registado com sucesso!`);
                 member.roles.add(member.guild.roles.cache.find(role => role.name === "Não-Verificado"));
+            }
+
+            var display_name = "";
+
+            if(member.nickname == null) {
+                display_name = member.user.username;
+            } else {
+                display_name = member.nickname;
+            }
+            const isDocenteAssociado = await db.query(`select count(*) from users_unidades_curriculares uuc,users u `+
+            `where uuc.discord_user_id = u.discord_id `+
+            `and discord_server_id = $1 and discord_user_id = $2`, [member.guild.id,member.user.id]);
+            if (isDocenteAssociado.rows[0].count == 0 &&  display_name.startsWith('p')) {
+                await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', [uuidv1(), member.user.id,member.guild.id ]);
+                console.log(`[USER SERVICE] Utilizador "${member.user.id}" associado ao discord server id "${member.guild.id}".`);
             }
         });
       });
@@ -73,36 +89,38 @@ async function validarAllUsers(){
 
 async function checkNotVerifyedUsers(){
     var today = new Date();
-    var date = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
-    let messageToSend = '\nUpdate validação ' + date + '\n' + 'Os seguintes utilizadores ainda não concluiram o processo de validação:\n\n';
-    const checkJob = await db.query('select count(*) from jobs where name = $1 and date = $2', ['USERS_NOT_VERIFY', date]);
-    if (checkJob.rows[0].count == 0) {
-        const usersNotVerify = await db.query('select discord_id  from users where valid = false;');
-        if (usersNotVerify.rows.count != 0) {
-            usersNotVerify.rows.forEach(user_id => {
-                messageToSend += '<@' + user_id.discord_id + '>\n';
-            });
-            messageToSend += '\n\n> Caso já tenham o código enviado para o email, mudem o vosso nickname no servidor para o seguinte formato: <aXXXXXXX> <Primeiro Nome> <Segundo Nome>;\n';
-            messageToSend += '> Se ainda não iniciaram o processo usem !validar para saber mais;';
-            
-            client.guilds.cache.forEach( async guild => {
-                var list = client.guilds.cache.get(guild.id); 
-                list.channels.cache.forEach(async canal =>{
-                    if(canal.name == 'validação'){
-                        canal.send(messageToSend);
-                    }
+    var date = today.getDate()+'/'+(today.getMonth()+1)+'/'+today.getFullYear();
+    let messageToSend = '\nUpdate validação '+date+'\n'+
+    'Os seguintes utilizadores ainda não concluiram o processo de validação:\n\n';
+        const checkJob = await db.query('select count(*) from jobs where name = $1 and date = $2',['USERS_NOT_VERIFY',date]);
+        if (checkJob.rows[0].count == 0) {
+            const usersNotVerify = await db.query('select discord_id  from users where valid = false;');
+            if (usersNotVerify.rows.count != 0) {
+                usersNotVerify.rows.forEach(user_id => {
+                    messageToSend += '<@'+user_id.discord_id+'>\n';
                 });
-            });
-            db.query('insert into jobs (uuid,name,description,date) values ($1,$2,$3,$4)', [uuidv1(), 'USERS_NOT_VERIFY', messageToSend, date]);
+                messageToSend+='\n\n> Caso já tenham o código enviado para o email, mudem o vosso nickname no servidor para o seguinte formato: <aXXXXXXX> <Primeiro Nome> <Segundo Nome>;\n';
+                messageToSend+='> Se ainda não iniciaram o processo usem !validar para saber mais;';
+                
+                client.guilds.cache.forEach( async guild => {
+                    var list = client.guilds.cache.get(guild.id); 
+                    list.channels.cache.forEach(async canal =>{
+                        if(canal.name == 'validação'){
+                            canal.send(messageToSend);
+                        }
+                    });
+                    
+                });
+                db.query('insert into jobs (uuid,name,description,date) values ($1,$2,$3,$4)', [uuidv1(), 'USERS_NOT_VERIFY', messageToSend, date]);
+            }
         }
-    }
 }
 
 async function setGroupUser(member){
     const userAccountN = await db.query('select count(*) from users where discord_id = $1', [member.user.id]);
     if (userAccountN.rows[0].count == 0) {
         await db.query('insert into users (uuid,discord_id,user_number,user_name,valid,code) values ($1,$2,$3,$4,$5,$6)', [uuidv1(), member.user.id, '', '', false, '']);
-        console.log(`[USER SERVICE] Utilizador " ${member.user.id} " - " ${member.user.username} " registado com sucesso!`);
+        console.log(`[USER SERVICE] Utilizador "${member.user.id}" - "${member.user.username}" registado com sucesso!`);
         member.roles.add(member.guild.roles.cache.find(role => role.name === "Não-Verificado"));
     } else {
         const userAccount = await db.query('select user_number,valid from users where discord_id = $1', [member.user.id]);
@@ -110,16 +128,21 @@ async function setGroupUser(member){
             console.log('[USER SERVICE] Grupo setado para o user ' + member.user.id + ' Docente.');
             member.roles.add(member.guild.roles.cache.find(role => role.name === "Docente"));
          
-            await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', [uuidv1(), member.user.id,member.guild.id]);
-            console.log(`[USER SERVICE] Utilizador " ${member.user.id} " associado ao discord server id " ${member.guild.id} ".`);
-            
+            const isDocenteAssociado = await db.query('select count(*) from users_unidades_curriculares where discord_server_id = $1 and discord_user_id = $2', [member.guild.id,member.user.id]);
+            if (isDocenteAssociado.rows[0].count == 0) {
+                await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', [uuidv1(), member.user.id,member.guild.id ]);
+                console.log(`[USER SERVICE] Utilizador "${member.user.id}" associado ao discord server id "${member.guild.id}".`);
+            }
         } else if (userAccount.rows[0].user_number.toString().startsWith('a') && userAccount.rows[0].valid === true) {
-            console.log('[USER SERVICE] Grupo setado para o user ' + member.user.id + ' Aluno.');
+            console.log('[USER SERVICE] Grupo setado para o user '+member.user.id+' Aluno.');
             member.roles.add(member.guild.roles.cache.find(role => role.name === "Aluno"));
         } else {
             console.log('[USER SERVICE] Grupo setado para o user ' + member.user.id + ' não validado.');
             member.roles.add(member.guild.roles.cache.find(role => role.name === "Não-Verificado"));
         }
+
+        const userNickName = await db.query('select user_name from users where discord_id = $1', [member.user.id]);
+        member.setNickname(userNickName.rows[0].user_name);
     }
 }
 
@@ -138,10 +161,10 @@ client.on('ready', async () => {
             await db.query('insert into unidades_curriculares (uuid,server_id,uc_name) values ($1,$2,$3)', [uuid,guild.id,guild.name]);
             console.log('[NOVO | ADICIONADO] ' + guild.id + ' | ' + guild.name+'');
         }else{
-            console.log('[REGISTADO] ' + guild.id + ' | ' + guild.name + '');
+            console.log('[REGISTADO] ' + guild.id + ' | ' + guild.name+'');
         }
       };
-    console.log('\n');
+      console.log('\n');
     console.log('Processo de validação de utilizadores...');
     validarAllUsers();
     checkNotVerifyedUsers();
@@ -154,7 +177,7 @@ client.on("guildCreate", async (guild) => {
     if (dbserver.rows[0].count == 0) {
         let uuid = uuidv1();
         await db.query('insert into unidades_curriculares (uuid,server_id,uc_name) values ($1,$2,$3)', [uuid,guild.id,guild.name]);
-        console.log('[NOVO | ADICIONADO] ' + guild.id + ' | ' + guild.name + '');
+        console.log('[NOVO | ADICIONADO] ' + guild.id + ' | ' + guild.name+'');
     }
 
     //validar os users quando o bot entra depois deles:
@@ -201,7 +224,6 @@ client.on("messageCreate", async message => {
 //primeira validação de user e criação de row na tabela users em BD
 client.on("guildMemberAdd", async (member) => {
    setGroupUser(member);
-   //falta setar o nickname
 });
 
 client.on("messageCreate", async message => {
@@ -211,27 +233,56 @@ client.on("messageCreate", async message => {
     //processo de validação de user DC e numero de aluno
     let args = message.content.split(' ');
     let command = args.shift().toLowerCase();
-    if(command == '!apagar'){
-        const newChannel = await message.channel.clone();
-        console.log(newChannel.id);
-        message.channel.delete();
-        return message.reply('Mensagens apagadas!');
+    if(command == '!teste'){
+        const thread = await message.channel.threads.create({
+            name: 'criar-thread-privada-testes',
+            autoArchiveDuration: 60,
+            type: 'GUILD_PRIVATE_THREAD',
+            reason: 'Vamos tentar criar isto',
+        });
+        
+        console.log(`Created thread: ${thread.name}`);
     }
+    if(command == '!apagar'){
+        const newChannel = await message.channel.clone()
+        message.channel.delete();
 
+
+        const exampleEmbed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle('Como posso validar a minha conta?')
+        .setDescription('Antes de utilizares outras funcionalidades terão de associar a tua conta discord com o teu número de aluno.')
+        .addFields(
+            { name: '\u200B', value: '\u200B' },//dar espaço
+            { name: '1. Começar o processo:', value: 'Usa !validar para saberes todos os comandos disponíveis.' },
+            { name: '2 Receber o email com o código de validação:', value: 'Usa !validar <email institucional> para receberes um código de acesso a este servidor *' },
+            { name: '3. Após teres recebido o email:', value: 'Muda o teu username no servidor para o seguinte formato: <número de aluno> <Nome> <Sobrenome>.' },
+            { name: '4. Concluir a validação', value: 'Usa !validar <email institucional> <codigo que recebeste no email>.' },
+            { name: '\u200B', value: '\u200B' },//dar espaço
+
+
+            //{ name: 'Inline field title', value: 'Some value here', inline: true },
+        )
+        /*.addField('Inline field title', 'Some value here', true)
+        .setImage('https://i.imgur.com/AfFp7pu.png')
+        .setTimestamp()*/
+        .setFooter({ text: '* O teu email institucional começa com a<numero de aluno>@alunos.ulht.pt (para alunos) ou por p<número de docente>@ulusofona.pt (docentes);\nO email enviado pode ir para a caixa de SPAM ou para os ITENS APAGADOS, pedimos que verifiquem;\n\nPara mais algum esclarecimento, contactem os moderadores/docentes deste servidor.'});
+    
+         message.guild.channels.cache.get(newChannel.id).send({ embeds: [exampleEmbed] });
+
+        return console.log('[CHANNEL SERVICE] A sala de validação foi regenerada.')
+    }
     if (args.length == 1 && command == '!validar' && args[0] != null && args[1] == null) {
         const valid = await db.query('select valid from users where discord_id = $1', [message.member.id]);
         if (valid.rows[0].valid == true){
             return sendMessage(message,'A sua conta já está validada!');
         }
-
         if (!args[0].split('@')[0].toLowerCase().startsWith('a') && !args[0].split('@')[0].toLowerCase().startsWith('p')) {
             return sendMessage(message,'O endereço de email tem de começar por a (alunos) ou p(professor)!');
         }
-
         if (args[0].split('@').length!= 2 || args[0].split('@')[1].toLowerCase() != 'alunos.ulht.pt' && args[0].split('@')[1].toLowerCase() != 'ulusofona.pt') {
             return sendMessage(message,'O endereço de email tem de conter um dos seguintes dominios alunos.ulht.pt ou ulusofona.pt.');
         }
-
         const CodeUUID = uuidv1();
         const password = uuidv1();
         var mailOptionsAlunos = {
@@ -246,10 +297,10 @@ client.on("messageCreate", async message => {
             to: args[0],
             subject: 'Validação conta Discord + Web',
             text: 'O seu código de validação para o Discord é ' + CodeUUID + '.\n'+
-                'Para aceder à plataforma web use o seu email de registo como user e a seguinte password ' + password + '.'
+                'Para aceder à plataforma web use o seu email de registo como user e a seguinte password '+password+'.'
         };
 
-        await db.query('update users set code = $1,user_number = $2,password=$3 where discord_id = $4', [CodeUUID, args[0].split('@')[0].toLowerCase(), password, message.member.id]);
+        await db.query('update users set code = $1,user_number = $2,password=$3 where discord_id = $4', [CodeUUID, args[0].split('@')[0].toLowerCase(),password, message.member.id]);
 
         if(args[0].split('@')[0].toLowerCase().startsWith('a')){
             await transporter.sendMail(mailOptionsAlunos, function (error, info) {
@@ -269,7 +320,8 @@ client.on("messageCreate", async message => {
             });
         }
 
-        return sendMessage(message, 'Foi enviado um código para o teu email!\nAssim que receberes executa o comando !validar a<XXXXXX>@alunos.ulht.pt <codigo do email>');
+        return sendMessage(message,'Foi enviado um código para o teu email!\nAssim que receberes ' +
+        'executa o comando !validar a<XXXXXX>@alunos.ulht.pt <codigo do email>');
 
     } else if (args.length == 2 && command == '!validar' && args[0] != null && args[1] != null) {
         const valid = await db.query('select valid from users where discord_id = $1', [message.member.id]);
@@ -288,7 +340,6 @@ client.on("messageCreate", async message => {
         if (!args[0].split('@')[0].toLowerCase().startsWith('a') && !args[0].split('@')[0].toLowerCase().startsWith('p')) {
             return sendMessage(message,'O endereço de email tem de começar por a (alunos) ou p(professor)!');
         }
-
         if (args[0].split('@').length!= 2 || args[0].split('@')[1].toLowerCase() != 'alunos.ulht.pt' && args[0].split('@')[1].toLowerCase() != 'ulusofona.pt') {
             return sendMessage(message,'O endereço de email tem de conter um dos seguintes dominios alunos.ulht.pt ou ulusofona.pt.');
         }
@@ -313,8 +364,15 @@ client.on("messageCreate", async message => {
                 console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Docente.');
                 
                 //associar docente (que entrou neste discord) ao painel de gestão
-                await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', [uuidv1(),message.member.id,message.member.guild.id]);
-            
+                await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', 
+                [uuidv1(),message.member.id,message.member.guild.id]);
+
+                const isDocenteAssociado = await db.query('select count(*) from users_unidades_curriculares where discord_server_id = $1 and discord_user_id = $2', [message.channel.guild.id, message.member.id]);
+                if (isDocenteAssociado.rows[0].count == 0) {
+                    await db.query('insert into users_unidades_curriculares (uuid,discord_user_id,discord_server_id) values ($1,$2,$3)', [uuidv1(), message.member.user.id, member.guild.id ]);
+                    console.log(`[USER SERVICE] Utilizador "${message.member.user.id}" associado ao discord server id "${message.member.guild.id}".`);
+                }
+
             } else if (display_name[0].startsWith('a')) {
                 message.member.roles.add(message.member.guild.roles.cache.find(role => role.name === "Aluno"));
                 console.log('[USER SERVICE] Grupo setado para o user ' + message.member.id + ' como Aluno.');
@@ -322,6 +380,7 @@ client.on("messageCreate", async message => {
             console.log('[USER SERVICE] Conta validada para o user ' + message.member.id + '!');
 
             message.member.roles.remove(message.member.guild.roles.cache.find(role => role.name === "Não-Verificado"));
+
             return sendMessage(message,'Conta validada com sucesso!');
         } else {
             return sendMessage(message,'Ocorreu um erro ao validar a conta');
@@ -329,11 +388,11 @@ client.on("messageCreate", async message => {
     } else {
         
         if(!args.length > 3) {
-            return sendMessage(message, 'O comando que acabou de executar tem informação a mais, você só necessita de fazer \"!validar <e-mail institucional> <código de validação>\"');
+            return sendMessage(message,'O comando que acabou de executar tem informação a mais, você só necessita de fazer \"!validar <e-mail institucional> <código de validação>\"');
         }
 
         //console.log("AGRS " + args.length + " | " + args);
-        return sendMessage(message,'Para utilizares este comando usa um destes exemplos:\n' +
+            return sendMessage(message,'Para utilizares este comando usa um destes exemplos:\n' +
             '!validar a<XXXXXX>@aluhos.ulht.pt - Para enviar/reenviar o código para o teu email.\n' +
             '!validar a<XXXXXX>@alunos.ulht.pt <codigo> - Para validar a tua conta.');
     }
@@ -345,7 +404,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
         return reaction.users.remove(user.id);
     }else{
         if(reaction.emoji.name.valueOf().includes("🏅")){
-            console.log('[RANKING] Um utilizador (' + user.id + ') votou na mensagem ' + reaction.message.id + ' com 🏅!');
+            console.log('[RANKING] Um utilizador (' + user.id + ') votou na mensagem '+reaction.message.id+ ' com 🏅!');
             await db.query('update threads_interactions set good_message = $1 where discord_message_id = $2', [true, reaction.message.id]);
         }else if(reaction.emoji.name.valueOf().includes("🏆")){
             const isQuestion = await db.query('select discord_message_id from threads_interactions ti  where thread_id = $1 order by discord_message_id limit 1;', [reaction.message.channel.id]);
@@ -353,7 +412,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
                 sendMessage(reaction.message,'Apenas pode marcar a primeira mensagem da thread como boa questão!');
                 return reaction.users.remove(user.id);
             }
-            console.log('[RANKING] Um utilizador (' + user.id + ') votou na mensagem ' + reaction.message.id + ' com 🏆!');
+            console.log('[RANKING] Um utilizador (' + user.id + ') votou na mensagem '+reaction.message.id+ ' com 🏆!');
             await db.query('update students_threads set good_thread = $1 where thread_id = $2', [true, reaction.message.channel.id]);
         }
     }
@@ -371,32 +430,43 @@ client.on('messageReactionRemove', async (reaction, user) => {
 });
 
 client.on("messageCreate", async message => {
+    var today = new Date();
     if (message.channel.type.includes("THREAD") && !message.type.includes("CHANNEL_NAME_CHANGE") && message.author.id != bot_id) {
         const uuid = uuidv1();
-        console.log('[THREADS] Nova interação numa thread, Discord ID: ' + message.member.guild.id + ' DB unique ID: ' + uuid + ' Mensagem: ' + message.content);
+        console.log('[THREADS] Nova interação numa thread, Discord ID: '+message.member.guild.id+' DB unique ID: '+uuid+' Mensagem: '+ message.content);
         await db.query('insert into threads_interactions (uuid,discord_message_id,discord_user_id,thread_id,message,discord_server_id,good_message,created_at) values ($1,$2,$3,$4,$5,$6,$7,$8)', 
-        [uuidv1(),message.id,message.member.id, message.channelId.valueOf(), message.content, message.member.guild.id, false, null]);
+        [uuidv1(),message.id,message.member.id, message.channelId.valueOf(),message.content, message.member.guild.id,false,date.format(today, 'DD-MM-YYYY HH:mm:ss')]);
        }
 });
 
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+    if(oldMessage.channel.type.includes("THREAD")){
+        console.log('[THREADS] Uma mensagem foi alterada na thread '+oldMessage.channel.id+' texto antigo: '+oldMessage.content+' Novo texto: '+newMessage.content);
+        await db.query('update threads_interactions set message = $1 where discord_message_id = $2', [newMessage.content, oldMessage.id]);
+    }
+ });
+
 client.on('threadCreate', async (thread) => {
     const uuid = uuidv1();
+    var today = new Date();
     console.log('[THREADS] Nova questão iniciada Discord ID: ' + thread.guild.id + ' DB unique ID: ' + uuid + ' Titulo: ' + thread.name.valueOf());
-    await db.query('insert into students_threads (uuid,discord_user_id,title,thread_id,discord_server_id,created_at) values ($1,$2,$3,$4,$5,$6)', 
-    [uuid, thread.ownerId, thread.name.valueOf(),thread.id.valueOf(),thread.guild.id,null]);
+    await db.query('insert into students_threads (uuid,discord_user_id,title,thread_id,discord_server_id,created_at) values ($1,$2,$3,$4,$5,$6)',
+    [uuid, thread.ownerId, thread.name.valueOf(),thread.id.valueOf(),thread.guild.id,date.format(today, 'DD-MM-YYYY HH:mm:ss')]);
+
 });
 
 client.on("messageDelete", async function(message){
     //se for uma thread e for apagada a mensagem seta a flag deleted = 1
     if (message.channel.type.includes("THREAD")) {
-        console.log('[THREADS] Mensagem apagada de uma tread, apagada por: ' + message);
+        console.log('[THREADS] Mensagem apagada de uma tread, apagada por: '+message);
         await db.query('update threads_interactions set deleted = $1 where discord_message_id = $2', [true,message.id]);
     }
 });
 
 client.on('threadDelete', async (thread) => {
-    console.log('[THREADS] Uma Thread foi apagada, apagada por: ' + thread);
+    console.log('[THREADS] Uma Thread foi apagada, apagada por: '+thread);
     await db.query('update students_threads set deleted = $1 where thread_id = $2', [true,thread.id]);
+
 });
 
 
