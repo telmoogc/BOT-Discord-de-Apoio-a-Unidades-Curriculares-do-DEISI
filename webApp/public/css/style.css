@@ -31,3 +31,7 @@ a:active { text-decoration: none; }
 .imagem-index {
     margin-left: 0%;
 }
+
+.nav-link {
+    color:#FFFFFF;
+}
