@@ -19,6 +19,8 @@
     "exceljs": "^4.3.0",
     "express": "^4.17.3",
     "express-session": "^1.17.2",
+    "express-zip": "^3.0.0",
+    "json2csv": "^5.0.7",
     "knex": "^1.0.4",
     "nodemailer": "^6.7.2",
     "nodemon": "^2.0.18",
