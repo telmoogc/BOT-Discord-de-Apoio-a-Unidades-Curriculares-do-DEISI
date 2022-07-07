@@ -6,8 +6,11 @@ const express = require("express");
 const sessions = require('express-session');
 const bodyParser = require("body-parser");
 const path = require('path');
+const zip = require('express-zip');
+const { parse, Parser } = require('json2csv');
 const db = require('../database/_database');
 var utils = require('./utils/secounds-to-date');
+const fs = require('fs');
 
 const limitePorQuerie = 5
 
@@ -27,48 +30,55 @@ app.use(sessions({
     resave: false
 }));
 
-app.get("/sair", async function (req, res) {
+app.get("/sair", async function(req, res){
     req.session.userId = null;
     res.redirect('/');
+    req.session.error = "";
 });
 
-app.get("/", function (req, res) {
-    if (req.session.userId || req.session.userId != null) {
-        db.query('select u.user_name,uc.* from users_unidades_curriculares uuc, users u, unidades_curriculares uc ' +
-            'where u.discord_id = uuc.discord_user_id ' +
-            'and uc.server_id = uuc.discord_server_id ' +
-            'and uc.deleted = false ' +
-            'and u.uuid like $1', [req.session.userId], (error, results) => {
-                if (error) {
-                    throw error
-                }
-                res.status(200).render("main-menu", { ucs: results.rows, usr: results.rows[0].user_name });
-            });
-    } else {
-        res.status(200).render("index");
+app.get("/", function(req, res){
+    
+    if(req.session.userId || req.session.userId != null){
+       db.query('select u.user_name,uc.* from users_unidades_curriculares uuc, users u, unidades_curriculares uc '+ 
+       'where u.discord_id = uuc.discord_user_id '+
+       'and uc.server_id = uuc.discord_server_id '+
+       'and uc.deleted = false '+
+       'and u.uuid like $1',[req.session.userId], (error, results) => {
+           if (error) {
+             throw error
+           }
+           res.status(200).render("main-menu", { ucs: results.rows,usr: results.rows[0].user_name });
+           req.session.error = "";
+         });
+    }else{
+        res.status(200).render("index", { error: req.session.error} );;
+        req.session.error= "";
     }
 });
 
-app.get("/login", function (req, res) {
-    if (!req.session.userId) {
-        if (!req.query.email) {
+app.get("/login", function(req, res){
+    if(!req.session.userId){
+        if(!req.query.email){
 
         }
-        if (!req.query.password) {
+        if(!req.query.password){
 
         }
-        db.query('select * from users where user_number like $1 and password like $2', [req.query.email, req.query.password], (error, results) => {
+        db.query('select * from users where user_number like $1 and password like $2',[req.query.email,req.query.password], (error, results) => {
             if (error) {
-                throw error
+              throw error
             }
-            if (results.rows.length > 0) {
+            if (results.rows.length>0){
                 req.session.userId = results.rows[0].uuid;
-                res.redirect('/');
-            } else {
-                return res.status(200).json('bad login');
+                res.redirect( '/');
+                req.session.error = "";
+                
+            }else{
+                req.session.error = 'Nome de utilizador ou password incorretos.';
+                res.redirect('back');
             }
-
-        });
+           
+          });
     }
 });
 
@@ -100,6 +110,7 @@ app.get("/uc-details/:id", function (req, res) {
                                 if (error2) {
                                     throw error2
                                 }
+
 
                                 db.query(`select u.user_name,ti.discord_user_id,count(*) as quantidade ` +
                                     `from threads_interactions ti,users u ` +
@@ -188,7 +199,115 @@ app.get("/uc-details/:id", function (req, res) {
                                                             }
 
                                                             if (results.rows.length > 0) {
-                                                                res.status(200).render('uc-details', { userinfo: results0.rows[0].user_name, ucdocentes: results.rows, topalunos: results2.rows, topinteracoes: results3.rows, topboasrespostas: results4.rows, topboasthreads: results5.rows, tempoprimeira: results6.rows, tempoultima: results7.rows, estatisticas:results8.rows[0], utils: utils });
+                                                                const docentes = JSON.parse(JSON.stringify(results.rows));
+                                                                const csvFields = ['server_id', 'uc_name','uuid','discord_id','user_name'];
+                                                    
+                                                                const parser = new Parser({
+                                                                    csvFields,
+                                                                    unwind: ['server_id', 'uc_name','uuid','discord_id','user_name']
+                                                                });
+                                                                
+                                                                const csv = parser.parse(docentes);
+                                                                fs.writeFile('./csv-files/docentes-'+results.rows[0].server_id+'.csv', csv, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] docentes.csv guardado.');
+                                                                });
+
+                                                                //top alunos
+                                                                const topalunos = JSON.parse(JSON.stringify(results2.rows));
+                                                                const csvFields2 = ['user_name', 'discord_user_id','quantidade'];
+                                                    
+                                                                const parser2 = new Parser({
+                                                                    csvFields2,
+                                                                    unwind: ['user_name', 'discord_user_id','quantidade']
+                                                                });
+                                                                
+                                                                const csv2 = parser2.parse(topalunos);
+                                                                fs.writeFile('./csv-files/topalunos-'+results.rows[0].server_id+'.csv', csv2, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] topalunos.csv guardado.');
+                                                                });
+
+                                                                //topint
+                                                                const topint = JSON.parse(JSON.stringify(results3.rows));
+                                                                const csvFields3 = ['thread_id', 'created_at','last_at','elapsetime'];
+                                                    
+                                                                const parser3 = new Parser({
+                                                                    csvFields3,
+                                                                    unwind: ['thread_id', 'created_at','last_at','elapsetime']
+                                                                });
+                                                                
+                                                                const csv3 = parser3.parse(topint);
+                                                                fs.writeFile('./csv-files/interacoes-'+results.rows[0].server_id+'.csv', csv3, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] interacoes.csv guardado.');
+                                                                });
+
+                                                                //boas respostas
+                                                                const boasresostas = JSON.parse(JSON.stringify(results4.rows));
+                                                                const csvFields4 = ['thread_id', 'created_at','last_at','elapsetime'];
+                                                    
+                                                                const parser4 = new Parser({
+                                                                    csvFields4,
+                                                                    unwind: ['server_id', 'uc_name','uuid','discord_id','user_name']
+                                                                });
+                                                                
+                                                                const csv4 = parser4.parse(boasresostas);
+                                                                fs.writeFile('./csv-files/boas-respostas-'+results.rows[0].server_id+'.csv', csv4, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] boas-respostas.csv guardado.');
+                                                                });
+
+                                                                //boas threads
+                                                                const boasthr = JSON.parse(JSON.stringify(results5.rows));
+                                                                const csvFields5 = ['server_id', 'uc_name','uuid','discord_id','user_name'];
+                                                    
+                                                                const parser5 = new Parser({
+                                                                    csvFields5,
+                                                                    unwind: ['server_id', 'uc_name','uuid','discord_id','user_name']
+                                                                });
+                                                                
+                                                                const csv5 = parser5.parse(boasthr);
+                                                                fs.writeFile('./csv-files/boas-perguntas-'+results.rows[0].server_id+'.csv', csv5, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] boas-perguntas.csv guardado.');
+                                                                });
+
+                                                                //tempo primeira
+                                                                const tempop = JSON.parse(JSON.stringify(results6.rows));
+                                                                const csvFields6 = ['server_id', 'uc_name','uuid','discord_id','user_name'];
+                                                    
+                                                                const parser6 = new Parser({
+                                                                    csvFields6,
+                                                                    unwind: ['server_id', 'uc_name','uuid','discord_id','user_name']
+                                                                });
+                                                                
+                                                                const csv6 = parser6.parse(tempop);
+                                                                fs.writeFile('./csv-files/tempos-primeira-'+results.rows[0].server_id+'.csv', csv6, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] tempos-primeira.csv guardado.');
+                                                                });
+
+                                                                //tempo ultima
+                                                                const tempou = JSON.parse(JSON.stringify(results7.rows));
+                                                                const csvFields7 = ['server_id', 'uc_name','uuid','discord_id','user_name'];
+                                                    
+                                                                const parser7 = new Parser({
+                                                                    csvFields7,
+                                                                    unwind: ['server_id', 'uc_name','uuid','discord_id','user_name']
+                                                                });
+                                                                
+                                                                const csv7 = parser7.parse(tempou);
+                                                                fs.writeFile('./csv-files/tempo-ultima-'+results.rows[0].server_id+'.csv', csv7, function(err) {
+                                                                    if (err) throw err;
+                                                                    console.log('[CSV] tempo-ultima.csv guardado.');
+                                                                });
+                                                            
+
+                                                                res.status(200).render('uc-details', { userinfo: results0.rows[0].user_name, ucdocentes: results.rows, topalunos: results2.rows, topinteracoes: results3.rows,
+                                                                     topboasrespostas: results4.rows, topboasthreads: results5.rows,
+                                                                      tempoprimeira: results6.rows, tempoultima: results7.rows,
+                                                                       estatisticas:results8.rows[0], utils: utils });
                                                             } else {
                                                                 res.redirect(req.header('Referer') || '/');
                                                             }
@@ -208,6 +327,18 @@ app.get("/uc-details/:id", function (req, res) {
     }
 });
 
+app.get('/download/:server_id', function(req, res){
+
+    res.zip([
+        { path: './csv-files/docentes-'+req.params.server_id+'.csv',name: 'docentes.csv'},
+        { path: './csv-files/topalunos-'+req.params.server_id+'.csv',name: 'topalunos.csv'},
+        { path: './csv-files/boas-respostas-'+req.params.server_id+'.csv',name: 'boas-respostas.csv'},
+        { path: './csv-files/interacoes-'+req.params.server_id+'.csv',name: 'interacoescsv'},
+        { path: './csv-files/tempo-primeira-'+req.params.server_id+'.csv',name: 'tempo-primeira.csv'},
+        { path: './csv-files/tempo-ultima-'+req.params.server_id+'.csv',name: 'tempo-ultima.csv'}
+       
+ ])
+});
 app.listen(process.env.PORT || 3000, function () {
     db.connect();
     console.log("Server started on port 3000");

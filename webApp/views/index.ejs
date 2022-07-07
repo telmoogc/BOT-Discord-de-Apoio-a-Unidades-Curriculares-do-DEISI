@@ -37,7 +37,10 @@
 					<div class="mb-3">
 						<label for="exampleInputEmail1" class="form-label">Número de Docente</label>
 						<input type="text" class="form-control" id="email" name="email" aria-describedby="emailHelp" placeholder="p0000" required>
-						<div id="emailHelp" class="text-danger">Isto vai dar jeito para validares os campos dos formulários</div>
+						<% if(error){ %>
+							<div id="emailHelp" class="text-danger"><%= error %></div>
+						 <% } %>
+						
 					</div>
 					<div class="mb-3">
 						<label for="exampleInputPassword1" class="form-label">Password</label>
@@ -45,6 +48,7 @@
 					</div>
 					<div class="col text-center pt-4">
 						<button type="submit" class="btn btn-outline-light btn-lg">Entrar</button>
+						<a href="https://discord.gg/pPqPWvts" target="_blank" class="btn btn-outline-light btn-lg">Registar via Discord</a>
 					</div>
 				</form>
 			</div>
