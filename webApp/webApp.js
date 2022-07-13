@@ -20,7 +20,8 @@ app.set('views', `${__dirname}/views`);
 app.use(express.static(`${__dirname}/public`));
 
 app.set('view engine', 'ejs');
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 //session init
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(sessions({
@@ -329,16 +330,34 @@ app.get("/uc-details/:id", function (req, res) {
 
 app.get('/download/:server_id', function(req, res){
 
+    console.log(req.params.server_id)
     res.zip([
-        { path: './csv-files/docentes-'+req.params.server_id+'.csv',name: 'docentes.csv'},
-        { path: './csv-files/topalunos-'+req.params.server_id+'.csv',name: 'topalunos.csv'},
-        { path: './csv-files/boas-respostas-'+req.params.server_id+'.csv',name: 'boas-respostas.csv'},
-        { path: './csv-files/interacoes-'+req.params.server_id+'.csv',name: 'interacoescsv'},
-        { path: './csv-files/tempo-primeira-'+req.params.server_id+'.csv',name: 'tempo-primeira.csv'},
-        { path: './csv-files/tempo-ultima-'+req.params.server_id+'.csv',name: 'tempo-ultima.csv'}
+        { path: 'csv-files/docentes-'+req.params.server_id+'.csv',name: 'docentes.csv'},
+        { path: 'csv-files/topalunos-'+req.params.server_id+'.csv',name: 'topalunos.csv'},
+        { path: 'csv-files/boas-respostas-'+req.params.server_id+'.csv',name: 'boas-respostas.csv'},
+        { path: 'csv-files/boas-perguntas-'+req.params.server_id+'.csv',name: 'boas-perguntas.csv'},
+        { path: 'csv-files/interacoes-'+req.params.server_id+'.csv',name: 'interacoes.csv'},
+        { path: 'csv-files/tempos-primeira-'+req.params.server_id+'.csv',name: 'tempo-primeira.csv'},
+        { path: 'csv-files/tempo-ultima-'+req.params.server_id+'.csv',name: 'tempo-ultima.csv'}
        
  ])
 });
+
+app.post('/update/password', function(req, res){
+    if(!req.session.userId || req.session.userId == null){
+        return res.redirect(req.header('Referer') || '/');
+    }
+
+    db.query('update users set password = $1 where uuid = $2', [req.body.password, req.session.userId], (error, results) => {
+        if (error) {
+            throw error
+        }
+
+        res.redirect(req.header('Referer') || '/');
+    });
+});
+
+
 app.listen(process.env.PORT || 3000, function () {
     db.connect();
     console.log("Server started on port 3000");
